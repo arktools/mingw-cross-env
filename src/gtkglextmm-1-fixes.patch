@@ -1,0 +1,26 @@
+This file is part of mingw-cross-env.
+See doc/index.html for further information.
+
+Contains ad hoc patches for cross building.
+
+From 865936e91293bdc59c2e9c47e5a4b54fb6f1629e Mon Sep 17 00:00:00 2001
+From: mingw-cross-env
+Date: Wed, 29 Sep 2010 23:08:44 +0200
+Subject: [PATCH] allow deprecated GdkSpanFunc
+
+
+diff --git a/gtkglext/gtkmm/gl/Makefile.in b/gtkglext/gtkmm/gl/Makefile.in
+index 13afa02..152f930 100644
+--- a/gtkglext/gtkmm/gl/Makefile.in
++++ b/gtkglext/gtkmm/gl/Makefile.in
+@@ -209,7 +209,6 @@ sublib_cflags = \
+ 	$(GTKGLEXTMM_DEP_CFLAGS)	\
+ 	-DGTKMM_GL_COMPILATION		\
+ 	-DG_DISABLE_DEPRECATED		\
+-	-DGDK_DISABLE_DEPRECATED	\
+ 	-DGDK_PIXBUF_DISABLE_DEPRECATED	\
+ 	-DGTK_DISABLE_DEPRECATED
+ 
+-- 
+1.7.7.3
+

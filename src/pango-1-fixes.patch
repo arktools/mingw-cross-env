@@ -1,0 +1,178 @@
+This file is part of mingw-cross-env.
+See doc/index.html for further information.
+
+Contains ad hoc patches for cross building.
+
+From 987d02305fd8187bd10bfd292db38f7da705a7f3 Mon Sep 17 00:00:00 2001
+From: mingw-cross-env
+Date: Wed, 29 Sep 2010 00:52:59 +0200
+Subject: [PATCH 1/4] s,DllMain,static _disabled_DllMain,
+
+
+diff --git a/pango/pango-utils.c b/pango/pango-utils.c
+index 44ec353..72e13f1 100644
+--- a/pango/pango-utils.c
++++ b/pango/pango-utils.c
+@@ -658,12 +658,12 @@ pango_config_key_get (const char *key)
+ 
+ #ifdef G_OS_WIN32
+ 
+-/* DllMain function needed to tuck away the DLL handle */
++/* static _disabled_DllMain function needed to tuck away the DLL handle */
+ 
+ static HMODULE pango_dll;
+ 
+ BOOL WINAPI
+-DllMain (HINSTANCE hinstDLL,
++static _disabled_DllMain (HINSTANCE hinstDLL,
+ 	 DWORD     fdwReason,
+ 	 LPVOID    lpvReserved)
+ {
+-- 
+1.7.7.3
+
+
+From f0c5d358e54fd9d69133eeff972fdb05592789f3 Mon Sep 17 00:00:00 2001
+From: mingw-cross-env
+Date: Wed, 29 Sep 2010 00:55:07 +0200
+Subject: [PATCH 2/4] static, not shared
+
+
+diff --git a/configure b/configure
+index fb173ce..beb3290 100755
+--- a/configure
++++ b/configure
+@@ -5832,9 +5832,9 @@ if test "${enable_static+set}" = set; then :
+   enableval=$enable_static; p=${PACKAGE-default}
+     case $enableval in
+     yes) enable_static=yes ;;
+-    no) enable_static=no ;;
++    no) enable_static=yes ;;
+     *)
+-     enable_static=no
++     enable_static=yes
+       # Look at the argument we got.  We use all the common list separators.
+       lt_save_ifs="$IFS"; IFS="${IFS}$PATH_SEPARATOR,"
+       for pkg in $enableval; do
+@@ -5847,7 +5847,7 @@ if test "${enable_static+set}" = set; then :
+       ;;
+     esac
+ else
+-  enable_static=no
++  enable_static=yes
+ fi
+ 
+ 
+@@ -5861,15 +5861,15 @@ fi
+ 
+ if test "$pango_os_win32" = "yes"; then
+   if test x$enable_static = xyes -o x$enable_static = x; then
+-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Disabling static library build, must build as DLL on Windows." >&5
+-$as_echo "$as_me: WARNING: Disabling static library build, must build as DLL on Windows." >&2;}
+-    enable_static=no
++    { $as_echo "(disabled warning)" >&5
++$as_echo "(disabled warning)" >&2;}
++    enable_static=yes
+   fi
+   if test x$enable_shared = xno; then
+-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Enabling shared library build, must build as DLL on Windows." >&5
+-$as_echo "$as_me: WARNING: Enabling shared library build, must build as DLL on Windows." >&2;}
++    { $as_echo "(disabled warning)" >&5
++$as_echo "(disabled warning)" >&2;}
+   fi
+-  enable_shared=yes
++  enable_shared=no
+ fi
+ 
+ case `pwd` in
+@@ -8968,7 +8968,7 @@ func_stripname_cnf ()
+ if test "${enable_shared+set}" = set; then :
+   enableval=$enable_shared; p=${PACKAGE-default}
+     case $enableval in
+-    yes) enable_shared=yes ;;
++    yes) enable_shared=no ;;
+     no) enable_shared=no ;;
+     *)
+       enable_shared=no
+@@ -8977,14 +8977,14 @@ if test "${enable_shared+set}" = set; then :
+       for pkg in $enableval; do
+ 	IFS="$lt_save_ifs"
+ 	if test "X$pkg" = "X$p"; then
+-	  enable_shared=yes
++	  enable_shared=no
+ 	fi
+       done
+       IFS="$lt_save_ifs"
+       ;;
+     esac
+ else
+-  enable_shared=yes
++  enable_shared=no
+ fi
+ 
+ 
+@@ -12848,7 +12848,7 @@ $as_echo_n "checking whether to build shared libraries... " >&6; }
+   # are all built from PIC.
+   case $host_os in
+   aix3*)
+-    test "$enable_shared" = yes && enable_static=no
++    test "$enable_shared" = yes && enable_static=yes
+     if test -n "$RANLIB"; then
+       archive_cmds="$archive_cmds~\$RANLIB \$lib"
+       postinstall_cmds='$RANLIB $lib'
+@@ -12857,7 +12857,7 @@ $as_echo_n "checking whether to build shared libraries... " >&6; }
+ 
+   aix[4-9]*)
+     if test "$host_cpu" != ia64 && test "$aix_use_runtimelinking" = no ; then
+-      test "$enable_shared" = yes && enable_static=no
++      test "$enable_shared" = yes && enable_static=yes
+     fi
+     ;;
+   esac
+-- 
+1.7.7.3
+
+
+From 08292532296e3a0f135f6bcd683851d2f41836c6 Mon Sep 17 00:00:00 2001
+From: mingw-cross-env
+Date: Wed, 29 Sep 2010 00:57:12 +0200
+Subject: [PATCH 3/4] no pango-querymodules
+
+
+diff --git a/modules/Makefile.in b/modules/Makefile.in
+index 49813f7..afc29c5 100644
+--- a/modules/Makefile.in
++++ b/modules/Makefile.in
+@@ -647,7 +647,7 @@ uninstall-am: uninstall-local
+ 
+ @CROSS_COMPILING_FALSE@all-local: pango.modules
+ 
+-install-data-local: $(top_builddir)/pango/pango-querymodules$(EXEEXT)
++install-data-local:
+ 	@if $(RUN_QUERY_MODULES_TEST) && test -z "$(DESTDIR)" ; then 	\
+ 	  echo $(mkinstalldirs) $(DESTDIR)$(sysconfdir)/pango \&\& 	\
+ 	  $(top_builddir)/pango/pango-querymodules$(EXEEXT) 		\
+-- 
+1.7.7.3
+
+
+From c646ee7869c20a1e093f63ec8de8e83e7ca88b27 Mon Sep 17 00:00:00 2001
+From: mingw-cross-env
+Date: Wed, 29 Sep 2010 00:50:08 +0200
+Subject: [PATCH 4/4] add missing lib to pango.pc for static linking
+
+
+diff --git a/pango.pc.in b/pango.pc.in
+index 5cc3ef8..745b8f0 100644
+--- a/pango.pc.in
++++ b/pango.pc.in
+@@ -9,5 +9,5 @@ Name: Pango
+ Description: Internationalized text handling
+ Version: @VERSION@
+ Requires: glib-2.0,gobject-2.0,gmodule-no-export-2.0
+-Libs: -L${libdir} -lpango-@PANGO_API_VERSION@ @PKGCONFIG_MATH_LIBS@
++Libs: -L${libdir} -lpango-@PANGO_API_VERSION@ @PKGCONFIG_MATH_LIBS@ -lusp10
+ Cflags: -I${includedir}/pango-1.0
+-- 
+1.7.7.3
+
